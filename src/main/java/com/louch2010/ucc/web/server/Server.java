@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -21,18 +23,19 @@ public class Server {
 			ServerSocket server = new ServerSocket(9527);
 			while(true){				
 				Socket socket = server.accept();
-				//读取请求
 				InputStream input = socket.getInputStream();
+				OutputStream output = socket.getOutputStream();
+				//读取请求
 				List<String> filesName = parseReq(input);
-				
 				//响应
-				PrintWriter pw = new PrintWriter(socket.getOutputStream());
+				PrintWriter pw = new PrintWriter(output);
 				String resp = getResp(filesName);
 				System.out.println("响应内容：" + resp);
 				pw.println(resp);
 				pw.flush();
-				IOUtils.closeQuietly(input);
+				//IOUtils.closeQuietly(input);
 				IOUtils.closeQuietly(pw);
+				//socket.close();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -60,10 +63,11 @@ public class Server {
 			//写入头标识
 			sb.append(Constants.Protocol.RESP_CONFIG_START + "\r\n");
 			//写入文件名
-			sb.append(name);
+			sb.append(name + "\r\n");
 			//读取文件内容并写入
 			FileInputStream input = new FileInputStream(file);
 			List<String> lines = IOUtils.readLines(input, "UTF-8");
+			IOUtils.closeQuietly(input);
 			for(String line:lines){
 				sb.append(line + "\r\n");
 			}
@@ -83,11 +87,16 @@ public class Server {
 	  */ 
 	private static List<String> parseReq(InputStream input) throws IOException{
 		List<String> files = new ArrayList<String>();
-		List<String> lines = IOUtils.readLines(input, "UTF-8");
+		InputStreamReader reader = new InputStreamReader(input);
 		StringBuffer sb = new StringBuffer();
-		for(String line:lines){
-			sb.append(line);
-		}
+		char chars[] = new char[1024];
+		int len;
+		/*while((len=reader.read(chars)) != -1){
+			sb.append(new String(chars, 0, len));
+		}*/
+		len=reader.read(chars);
+		sb.append(new String(chars, 0, len));
+		
 		String content = sb.toString().trim();
 		//请求文件
 		if(content.startsWith(Constants.Protocol.REQ_CONFIG_COMMAND)){
