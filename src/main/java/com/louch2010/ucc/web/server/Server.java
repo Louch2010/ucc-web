@@ -89,14 +89,9 @@ public class Server {
 		List<String> files = new ArrayList<String>();
 		InputStreamReader reader = new InputStreamReader(input);
 		StringBuffer sb = new StringBuffer();
-		char chars[] = new char[1024];
-		int len;
-		/*while((len=reader.read(chars)) != -1){
-			sb.append(new String(chars, 0, len));
-		}*/
-		len=reader.read(chars);
+		char chars[] = new char[1024 * 10];
+		int len = reader.read(chars);
 		sb.append(new String(chars, 0, len));
-		
 		String content = sb.toString().trim();
 		//请求文件
 		if(content.startsWith(Constants.Protocol.REQ_CONFIG_COMMAND)){
